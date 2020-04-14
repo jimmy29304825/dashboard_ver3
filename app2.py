@@ -28,7 +28,7 @@ for i in range(len(name)):
         'properties':{
             'district':name[i][2] + name[i][3],
         },
-        'id':i
+        'id':name[i][2] + name[i][3]
     }
     features.append(info)   
 shpData = {
@@ -36,27 +36,73 @@ shpData = {
     'features':features
 }
 
-fig = go.Figure(
-    go.Choroplethmapbox(
-        geojson=shpData, 
-        z=df_map.view,  # 分色資料依據
-        locations=df_map.name,   # df的key
-        colorscale='YlOrRd',
-        featureidkey="properties.district",  # shp的key
+
+app.layout = html.Div(
+    [
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.RadioItems(
+                        id='site_picker',
+                        options=[
+                            {
+                                'label': '房仲網', 
+                                'value': '房仲網'
+                            },
+                            {
+                                'label': '好房網', 
+                                'value': '好房網'
+                            },
+                        ],
+                        value='房仲網',
+                    )
+                ),
+            ],
+        ),
+        dbc.Row(
+            [
+                dbc.Col(dcc.Graph(id="mapplot")),
+            ],
+        ),
+    ]
+)
+
+
+# 趨勢圖資料
+@app.callback(
+    [
+        dash.dependencies.Output('mapplot', 'figure'),
+    ],
+    [
+        dash.dependencies.Input('site_picker', 'value'),
+    ]
+)
+def area_view(site):
+    df_map_site = df_map[df_map['site'] == site]
+    fig = go.Figure(
+        go.Choroplethmapbox(
+            geojson=shpData, 
+            z=df_map_site.view,  # 分色資料依據
+            locations=df_map_site.name,   # df的key
+            colorscale='YlOrRd',
+            marker=dict(opacity=0.8),
+            colorbar=dict(thickness=20),
+        )
     )
-)
-fig.update_layout(
-    mapbox_zoom=6,
-    mapbox_center={"lat": 23.5832, "lon": 120.5825},
-    mapbox_style="carto-positron",
-)
-fig.update_layout(
-    margin={"r":0,"t":0,"l":0,"b":0},
-)
+    fig.update_layout(
+        mapbox_zoom=8.5,
+        mapbox_center={"lat": 25.0093, "lon": 121.6186},
+        mapbox_style="open-street-map",
+    )
+    fig.update_layout(
+        margin={"r":0,"t":0,"l":0,"b":0},
+        height=600,
+    )
 
-
-app.layout = dcc.Graph(figure=fig)
-
+    return fig
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8052, debug=True)
+
+
+
